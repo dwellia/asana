@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const activeTasks = [];
     for (const [sectionGid, meta] of Object.entries(FREQUENCY_SECTIONS)) {
       const tasks = await getAllTasks(sectionGid, 'gid,name,notes,due_on,completed,memberships.section.gid', true);
-      const incomplete = tasks.filter(t => !t.completed && t.due_on);
+      const incomplete = tasks.filter(t => !t.completed);
       for (const t of incomplete) {
         activeTasks.push({ ...t, _frequencyDays: meta.days, _property: meta.property, _sectionGid: sectionGid });
       }
@@ -90,8 +90,8 @@ export default async function handler(req, res) {
         const property      = task._property;
 
         // last_completed = the due_on date on the current incomplete task
-        // (set by you manually, or by the scheduler from the previous completed task)
-        const lastCompleted = task.due_on;
+        // If no due date, assume halfway through the cycle (so next due = half a cycle from now)
+        const lastCompleted = task.due_on || addDays(today(), -Math.floor(frequencyDays / 2));
 
         // When is this task next due?
         const nextDueWindow = addDays(lastCompleted, frequencyDays);
